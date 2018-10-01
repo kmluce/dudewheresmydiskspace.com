@@ -1,1 +1,73 @@
-<!DOCTYPE html><html>  <head>    <meta http-equiv="content-type" content="text/html; charset=UTF-8">    <title>Dude, Where's My Disk Space?</title>  </head>  <body>    <h1 style=" text-align: center;"><b>Dude, Where's My Disk Space?</b></h1>    <br>    <p style="text-align: left;">We've all been there.&nbsp; Your linux (or      other unix) disk partition is way full and you can't figure out what      happened to the disk space.&nbsp; Maybe you had a download going and you      stopped it, but the disk didn't get any less full.&nbsp; Maybe you deleted      some banananpants large log files, but the disk didn't get any less      full!&nbsp; Worse, when you try to use du and df to figure out where your      disk space went, the two don't even agree on how much disk space is used.<b><br>      </b></p>    <h1 style=" text-align: center;"><b><span style="color: red;">Don't Panic!</span></b></h1>    <h3 style="  text-align: left;"><b>What's going on?</b></h3>    <p>You have a file that has been deleted but hasn't been removed from the      filesystem, because a running process is still holding a file handle for      the file.&nbsp; Until the process releases the file handle, the disk space      will continue to be used, and the process may still write to the file.</p>    <p><br>    </p>    <h3>Why is it doing this?</h3>    <p>Linux doesn't free up the space in a deleted file while any process has      the file open; it just removes it from the directory.&nbsp; du traverses      the directory tree to see what files exist within it, while df produces a      filesystem-based -- as opposed to directory tree-based -- accounting of      the amount of free space.&nbsp; df is therefore the more accurate view.</p>    <p><br>    </p>    <h3>What can I do about it?</h3>    <p>No worries, linux has you covered with lsof, the command to list open      files.&nbsp; A simple lsof &lt;filesystem&gt; -- for example, <code>lsof        /</code> --&nbsp; should give you a list of open files and tell you the      process ID of whatever is using the file.&nbsp; Most versions will tag      deleted files with '(deleted)' at the end of the line, so you can grep for      that.&nbsp; After you've figured out what process is using the file, you      can figure out how to stop and optionally restart the process, which      should clear the disk space.</p>    <p><br>    </p>    <h3>OMG, I can't kill that process; it's too important!</h3>    <p>This is a bit trickier, but it's still generally doable to truncate the      data out of the file.&nbsp; However, here you're getting into some risk      that the process actually needs the data in the file.&nbsp; Think twice or      three times before you do this:</p>    <ol>      <li>using that process ID you got from lsof in the steps above, check your        /proc for file descriptors.&nbsp; They're probably in        /proc/&lt;process_id&gt;/fd</li>      <li>if you do an <code>ls -l</code>, one of those file descriptor links        will be broken or will note that it's to a deleted file</li>      <li>once you've figured out which file descriptor, you can redirect        nothing to it.&nbsp; For example, if my process is 13929 and my file        descriptor is 4, I could do&nbsp; <code>&gt; /proc/13929/fd/4&nbsp;</code>        to truncate the file.</li>      <li>if you pick the wrong file descriptor, you're likely to be very, very        boned.</li>    </ol>    <p><br>    </p>    <p style="text-align: center;"><small>In loving tribute to <a href="https://www.linuxatemyram.com">LinuxAteMyRam.com</a>.&nbsp;        Source available at <a href="https://github.com/kmluce/dudewheresmydiskspace.com">GitHub</a>.</small></p>    <ol>    </ol>  </body></html>
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>Dude, Where's My Disk Space?</title>
+  </head>
+  <body>
+    <h1 style=" text-align: center;"><b>Dude, Where's My Disk Space?</b></h1>
+    <p style="text-align: center;"> or, <b>Girl You'd Better fsck it Before You
+        Wreck It</b></p>
+    <p><br>
+    </p>
+    <p style="text-align: left;">We've all been there.&nbsp; Your linux (or
+      other unix) disk partition is way full and you can't figure out what
+      happened to the disk space.&nbsp; Maybe you had a download going and you
+      stopped it, but the disk didn't get any less full.&nbsp; Maybe you deleted
+      some banananpants large log files, but the disk didn't get any less
+      full!&nbsp; Worse, when you try to use du and df to figure out where your
+      disk space went, the two don't even agree on how much disk space is used.<b><br>
+      </b></p>
+    <h1 style=" text-align: center;"><b><span style="color: red;">Don't Panic!</span></b></h1>
+    <h3 style="  text-align: left;"><b>What's going on?</b></h3>
+    <p>You have a file that has been deleted but hasn't been removed from the
+      filesystem, because a running process is still holding a file handle for
+      the file.&nbsp; Until the process releases the file handle, the disk space
+      will continue to be used, and the process may still write to the file.</p>
+    <p><br>
+    </p>
+    <h3>Why is it doing this?</h3>
+    <p>Linux doesn't free up the space in a deleted file while any process has
+      the file open; it just removes it from the directory.&nbsp; du traverses
+      the directory tree to see what files exist within it, while df produces a
+      filesystem-based -- as opposed to directory tree-based -- accounting of
+      the amount of free space.&nbsp; df is therefore the more accurate view.</p>
+    <p><br>
+    </p>
+    <h3>What can I do about it?</h3>
+    <p>No worries, linux has you covered with lsof, the command to list open
+      files.&nbsp; A simple lsof &lt;filesystem&gt; -- for example, <code>lsof
+        /</code> --&nbsp; should give you a list of open files and tell you the
+      process ID of whatever is using the file.&nbsp; Most versions will tag
+      deleted files with '(deleted)' at the end of the line, so you can grep for
+      that.&nbsp; After you've figured out what process is using the file, you
+      can figure out how to stop and optionally restart the process, which
+      should clear the disk space.</p>
+    <p><br>
+    </p>
+    <h3>OMG, I can't kill that process; it's too important!</h3>
+    <p>This is a bit trickier, but it's still generally doable to truncate the
+      data out of the file.&nbsp; However, here you're getting into some risk
+      that the process actually needs the data in the file.&nbsp; Think twice or
+      three times before you do this:</p>
+    <ol>
+      <li>using that process ID you got from lsof in the steps above, check your
+        /proc for file descriptors.&nbsp; They're probably in
+        /proc/&lt;process_id&gt;/fd</li>
+      <li>if you do an <code>ls -l</code>, one of those file descriptor links
+        will be broken or will note that it's to a deleted file</li>
+      <li>once you've figured out which file descriptor, you can redirect
+        nothing to it.&nbsp; For example, if my process is 13929 and my file
+        descriptor is 4, I could do&nbsp; <code>&gt; /proc/13929/fd/4&nbsp;</code>
+        to truncate the file.</li>
+      <li>if you pick the wrong file descriptor, you're likely to be very, very
+        boned.</li>
+    </ol>
+    <p><br>
+    </p>
+    <p style="text-align: center;"><small>In loving tribute to <a href="https://www.linuxatemyram.com">LinuxAteMyRam.com</a>.&nbsp;
+        Source available at <a href="https://github.com/kmluce/dudewheresmydiskspace.com">GitHub</a>.</small></p>
+    <ol>
+    </ol>
+  </body>
+</html>
